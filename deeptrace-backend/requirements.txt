@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+networkx
+python-dotenv
+groq
+openai
+pytest
+httpx

@@ -1,0 +1,21 @@
+:root {
+  --color-bg: #FAFAF9;
+  --color-surface: #FFFFFF;
+  --color-border: #E5E3DE;
+  --color-border-strong: #D3D1C7;
+  --color-text-primary: #1C1B18;
+  --color-text-secondary: #6B6A64;
+  --color-text-muted: #9B9A93;
+
+  --color-tier1: #378ADD;        /* known, direct supplier */
+  --color-tier1-bg: #E6F1FB;
+  --color-risk: #D85A30;         /* convergence / hidden risk */
+  --color-risk-bg: #FAECE7;
+  --color-danger: #E24B4A;       /* active disruption only */
+  --color-danger-bg: #FCEBEB;
+  --color-neutral-node: #B4B2A9; /* buyer / non-risk background nodes */
+
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --font-sans: 'Inter', -apple-system, sans-serif;
+}
