@@ -8,14 +8,14 @@ from app.agents.advisor_agent import get_advice_for_risk
 _cached_risks = None
 _cached_evidence = None
 
-def run_pipeline() -> Tuple[List[RiskChain], List[str]]:
+def run_pipeline(force_refresh: bool = False) -> Tuple[List[RiskChain], List[str]]:
     """
     Orchestrates: discovery -> risk_mapper -> prioritizer -> advisor
     Returns the scored risks and the evidence for the top risk.
     Caches the result to avoid redundant expensive computations.
     """
     global _cached_risks, _cached_evidence
-    if _cached_risks is not None and _cached_evidence is not None:
+    if not force_refresh and _cached_risks is not None and _cached_evidence is not None:
         return _cached_risks, _cached_evidence
 
     raw_risks = map_risks()

@@ -9,8 +9,8 @@ import json
 router = APIRouter()
 
 # Initialize Groq client
-api_key = os.getenv("GROQ_API_KEY", "")
-client = Groq(api_key=api_key)
+from app.config import settings
+client = Groq(api_key=settings.groq_api_key)
 @router.post("", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """

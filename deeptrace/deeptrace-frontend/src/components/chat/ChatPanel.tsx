@@ -30,6 +30,17 @@ export const ChatPanel: React.FC = () => {
     }
   }, [chatHistory, isTyping]);
 
+  useEffect(() => {
+    const handleCustomChat = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail === 'string') {
+        handleSend(customEvent.detail);
+      }
+    };
+    window.addEventListener('send-chat', handleCustomChat);
+    return () => window.removeEventListener('send-chat', handleCustomChat);
+  }, []);
+
   const handleSend = async (text: string) => {
     addChatMessage({
       id: Date.now().toString(),
