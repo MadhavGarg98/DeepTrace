@@ -26,7 +26,7 @@ def generate_json_completion(system_prompt: str, user_prompt: str) -> Optional[s
     try:
         if provider == "groq":
             response = client.chat.completions.create(
-                model="llama3-8b-8192", # or another groq model
+                model="openai/gpt-oss-20b",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}

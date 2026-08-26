@@ -1,0 +1,16 @@
+# Python cache and virtualenv
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Test/cache artifacts
+.pytest_cache/
+.coverage
+
+# Local secrets
+.env
+.env.*
+!.env.example

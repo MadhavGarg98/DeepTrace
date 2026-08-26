@@ -31,7 +31,7 @@ async def simulate_disruption_endpoint(req: DisruptionRequest):
         report = simulate_disruption(req.node_id)
         
         # After scores
-        risks_after, _ = run_pipeline()
+        risks_after, _ = run_pipeline(force_refresh=True)
         score_after = {r.id: r.score for r in risks_after}
         
         deltas = {}

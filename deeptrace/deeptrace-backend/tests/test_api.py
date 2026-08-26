@@ -52,3 +52,23 @@ def test_chat():
     
     # ensure they are different
     assert data1["answer"] != data2["answer"]
+
+
+def test_chat_greeting_does_not_trigger_risk_summary():
+    response = client.post("/api/v1/chat", json={"message": "hi"})
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "biggest hidden risk" not in data["answer"].lower()
+    assert data["top_risk"] is None
+    assert data["evidence"] == []
+
+
+def test_chat_greeting_variant_does_not_trigger_risk_summary():
+    response = client.post("/api/v1/chat", json={"message": "hii"})
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "biggest hidden risk" not in data["answer"].lower()
+    assert data["top_risk"] is None
+    assert data["evidence"] == []

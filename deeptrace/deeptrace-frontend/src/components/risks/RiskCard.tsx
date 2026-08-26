@@ -82,7 +82,13 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
               variant={approved ? 'secondary' : 'primary'}
               disabled={approved}
               className="w-full text-xs py-1.5"
-              onClick={(e) => { e.stopPropagation(); setApproved(true); }}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                setApproved(true); 
+                window.dispatchEvent(new CustomEvent('send-chat', { 
+                  detail: `I have approved the recommendation for the bottleneck at ${risk.bottleneck_node_id}. Please draft an action plan to mitigate this risk.`
+                }));
+              }}
             >
               {approved ? (
                 <>
