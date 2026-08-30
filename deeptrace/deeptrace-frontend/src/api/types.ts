@@ -31,6 +31,8 @@ export interface ChainNode {
   supplies_what?: string;
 }
 
+export type ApprovalStatus = "pending" | "approved" | "rejected";
+
 export interface RiskChain {
   id: string;
   affected_tier1_suppliers: string[];
@@ -42,6 +44,7 @@ export interface RiskChain {
   evidence: string[];
   explanation?: string;
   recommendation?: string;
+  approval_status: ApprovalStatus;
 }
 
 export interface ImpactReport {
@@ -118,5 +121,22 @@ export interface SimulateResponse {
   report: ImpactReport;
   deltas: Record<string, { before: number; after: number }>;
   history_entry: DisruptionHistoryEntry;
+  meta: MetaResponse;
+}
+
+// --- NEW: audit log types ---
+
+export type AgentName = "discovery" | "risk_mapper" | "prioritizer" | "advisor" | "system";
+
+export interface AgentLogEntry {
+  timestamp: string;
+  agent_name: AgentName;
+  action: string;
+  detail: string;
+  risk_id?: string;
+}
+
+export interface AuditLogResponse {
+  logs: AgentLogEntry[];
   meta: MetaResponse;
 }

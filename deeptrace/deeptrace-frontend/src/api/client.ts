@@ -1,4 +1,4 @@
-import type { AnalyticsSummary, ChatRequest, ChatResponse, GraphDataResponse, RisksResponse, SuppliersResponse, DisruptionHistoryResponse, SimulateResponse } from './types';
+import type { AnalyticsSummary, ChatRequest, ChatResponse, GraphDataResponse, RisksResponse, RiskChain, SuppliersResponse, DisruptionHistoryResponse, SimulateResponse, AuditLogResponse } from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -31,5 +31,13 @@ export const api = {
   simulateDisruption: (node_id: string) => fetcher<SimulateResponse>('/api/v1/disruptions/simulate', {
     method: 'POST',
     body: JSON.stringify({ node_id })
-  })
+  }),
+  // NEW: human-in-the-loop approval + audit trail
+  approveRisk: (chainId: string) => fetcher<RiskChain>(`/api/v1/risks/${chainId}/approve`, {
+    method: 'POST'
+  }),
+  rejectRisk: (chainId: string) => fetcher<RiskChain>(`/api/v1/risks/${chainId}/reject`, {
+    method: 'POST'
+  }),
+  getAuditLog: () => fetcher<AuditLogResponse>('/api/v1/audit'),
 };

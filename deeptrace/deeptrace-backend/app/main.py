@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.utils.logging import setup_logging
-from app.routers import chat, risks, analytics, disruptions, graph, suppliers
+from app.routers import chat, risks, analytics, disruptions, graph, suppliers, audit
 
 # Setup logging
 setup_logging()
@@ -22,6 +22,8 @@ app.include_router(analytics.router, prefix="/api/v1/analytics", tags=["Analytic
 app.include_router(disruptions.router, prefix="/api/v1/disruptions", tags=["Disruptions"])
 app.include_router(graph.router, prefix="/api/v1/graph", tags=["Graph"])
 app.include_router(suppliers.router, prefix="/api/v1/suppliers", tags=["Suppliers"])
+app.include_router(audit.router, prefix="/api/v1/audit", tags=["Audit"])
+
 @app.get("/")
 def health_check():
     return {"status": "ok", "message": "DeepTrace Backend is running."}

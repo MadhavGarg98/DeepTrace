@@ -3,21 +3,24 @@ import type { RiskChain } from '../../api/types';
 import { useStore } from '../../state/store';
 import { RevenueChart } from '../analytics/RevenueChart';
 import { Button } from '../common/Button';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, X } from 'lucide-react';
 import { formatPercentage } from '../../utils/format';
 import { Link } from 'react-router-dom';
 import { Tooltip } from '../common/Tooltip';
+import { api } from '../../api/client';
 
 interface RiskCardProps {
   risk: RiskChain;
   isTopRisk: boolean;
   totalRevenue: number;
+  onStatusChange?: (updated: RiskChain) => void;
 }
 
-export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenue }) => {
+export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenue, onStatusChange }) => {
   const { activeRiskId, setActiveRiskId } = useStore();
   const isActive = activeRiskId === risk.id;
-  const [approved, setApproved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // We need to estimate total revenue at risk for this card. 
   // For the demo, we assume the backend didn't provide this per-risk in the model, 
@@ -25,6 +28,39 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
   // Actually, we can just say "Score / 100 * totalRevenue" roughly for the visual chart,
   // or just use a fixed number if it's missing. Let's assume it's a large chunk.
   const revenueAtRisk = totalRevenue * (risk.score / 100) * 0.8;
+
+  const handleApprove = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const updated = await api.approveRisk(risk.id);
+      onStatusChange?.(updated);
+      // Keep the chat panel in the loop, same UX as before, but now it
+      // fires *after* a real, persisted approval instead of a fake local flag.
+      window.dispatchEvent(new CustomEvent('send-chat', {
+        detail: `I have approved the recommendation for the bottleneck at ${risk.bottleneck_node_id}. Please draft an action plan to mitigate this risk.`
+      }));
+    } catch (err: any) {
+      setError(err.message || 'Failed to approve');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReject = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const updated = await api.rejectRisk(risk.id);
+      onStatusChange?.(updated);
+    } catch (err: any) {
+      setError(err.message || 'Failed to reject');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div 
@@ -41,6 +77,16 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
           </div>
         </Tooltip>
       </div>
+
+      {risk.approval_status !== 'pending' && (
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium mb-3 ${
+          risk.approval_status === 'approved'
+            ? 'bg-green-100 text-green-700'
+            : 'bg-gray-100 text-gray-600'
+        }`}>
+          {risk.approval_status === 'approved' ? 'Approved' : 'Rejected'}
+        </span>
+      )}
       
       <div className="flex items-center gap-1 text-xs text-[var(--color-text-secondary)] mb-4 flex-wrap">
         {risk.chain_nodes.map((node, i) => (
@@ -77,27 +123,36 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
           <p className="text-sm italic text-[var(--color-text-secondary)] mb-3 leading-relaxed">
             "{risk.explanation}"
           </p>
-          {isTopRisk && (
-            <Button 
-              variant={approved ? 'secondary' : 'primary'}
-              disabled={approved}
-              className="w-full text-xs py-1.5"
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                setApproved(true); 
-                window.dispatchEvent(new CustomEvent('send-chat', { 
-                  detail: `I have approved the recommendation for the bottleneck at ${risk.bottleneck_node_id}. Please draft an action plan to mitigate this risk.`
-                }));
-              }}
-            >
-              {approved ? (
-                <>
-                  <Check size={14} className="mr-1.5" />
-                  Task Created
-                </>
-              ) : (
-                'Approve Recommendation'
-              )}
+
+          {error && (
+            <p className="text-xs text-[var(--color-danger)] mb-2">{error}</p>
+          )}
+
+          {risk.approval_status === 'pending' && isTopRisk && (
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                isLoading={isSubmitting}
+                className="flex-1 text-xs py-1.5"
+                onClick={handleApprove}
+              >
+                Approve recommendation
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={isSubmitting}
+                className="text-xs py-1.5 px-3"
+                onClick={handleReject}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          )}
+
+          {risk.approval_status === 'approved' && isTopRisk && (
+            <Button variant="secondary" disabled className="w-full text-xs py-1.5">
+              <Check size={14} className="mr-1.5" />
+              Approved &middot; ready to act on
             </Button>
           )}
         </div>

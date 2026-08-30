@@ -2,6 +2,7 @@ import json
 from pydantic import BaseModel, ValidationError
 from app.models.schemas import RiskChain
 from app.services.llm_client import generate_json_completion
+from app.services.audit_log import append_log
 
 class LLMResponseSchema(BaseModel):
     explanation: str
@@ -32,6 +33,15 @@ def get_advice_for_risk(risk: RiskChain) -> tuple[str, str]:
             try:
                 parsed = json.loads(raw_response)
                 validated = LLMResponseSchema(**parsed)
+                append_log(
+                    agent_name="advisor",
+                    action="recommendation_generated",
+                    detail=(
+                        f"Generated recommendation for '{risk.bottleneck_node_id}': "
+                        f"{validated.recommendation}"
+                    ),
+                    risk_id=risk.id,
+                )
                 return validated.explanation, validated.recommendation
             except (json.JSONDecodeError, ValidationError) as e:
                 import logging
@@ -39,7 +49,21 @@ def get_advice_for_risk(risk: RiskChain) -> tuple[str, str]:
                 continue
                 
     # Fallback if both attempts fail or if no LLM key is present
-    return (
-        f"Multiple Tier 1 suppliers depend on {risk.bottleneck_node_id}, creating a hidden bottleneck.",
+    fallback_explanation = (
+        f"Multiple Tier 1 suppliers depend on {risk.bottleneck_node_id}, creating a hidden bottleneck."
+    )
+    fallback_recommendation = (
         f"Identify alternative suppliers for {risk.bottleneck_node_id} or increase safety stock at Tier 1."
     )
+
+    append_log(
+        agent_name="advisor",
+        action="recommendation_fallback",
+        detail=(
+            f"LLM call unavailable or failed twice for '{risk.bottleneck_node_id}'; "
+            f"used the deterministic fallback recommendation instead."
+        ),
+        risk_id=risk.id,
+    )
+
+    return fallback_explanation, fallback_recommendation

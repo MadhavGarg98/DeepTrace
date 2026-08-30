@@ -1,6 +1,7 @@
 from typing import List
 from app.models.schemas import RiskChain
 from app.graph.graph_service import graph_db
+from app.services.audit_log import append_log
 
 def get_evidence_for_chain(chain: RiskChain) -> List[str]:
     """
@@ -26,4 +27,16 @@ def get_evidence_for_chain(chain: RiskChain) -> List[str]:
         if edge_data and "evidence" in edge_data:
             evidence.add(edge_data["evidence"])
 
-    return sorted(list(evidence))
+    evidence_list = sorted(list(evidence))
+
+    append_log(
+        agent_name="discovery",
+        action="evidence_gathered",
+        detail=(
+            f"Collected {len(evidence_list)} evidence item(s) supporting the "
+            f"inferred chain ending at '{chain.bottleneck_node_id}'."
+        ),
+        risk_id=chain.id,
+    )
+
+    return evidence_list

@@ -25,6 +25,7 @@ export const TopBar: React.FC = () => {
           <NavLink to="/" className={({isActive}) => `flex items-center h-full px-2 border-b-2 ${isActive ? 'border-[var(--color-text-primary)] text-[var(--color-text-primary)]' : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}>Dashboard</NavLink>
           <NavLink to="/suppliers" className={({isActive}) => `flex items-center h-full px-2 border-b-2 ${isActive ? 'border-[var(--color-text-primary)] text-[var(--color-text-primary)]' : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}>Suppliers</NavLink>
           <NavLink to="/history" className={({isActive}) => `flex items-center h-full px-2 border-b-2 ${isActive ? 'border-[var(--color-text-primary)] text-[var(--color-text-primary)]' : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}>History</NavLink>
+          <NavLink to="/audit" className={({isActive}) => `flex items-center h-full px-2 border-b-2 ${isActive ? 'border-[var(--color-text-primary)] text-[var(--color-text-primary)]' : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}`}>Audit Log</NavLink>
         </nav>
 
         <SummaryStrip />
