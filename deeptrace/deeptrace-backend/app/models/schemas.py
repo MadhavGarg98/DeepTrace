@@ -50,6 +50,10 @@ class RiskChain(BaseModel):
     evidence: List[str] = []
     explanation: Optional[str] = None
     recommendation: Optional[str] = None
+    # NEW: human-in-the-loop approval state. Defaults to "pending" for every
+    # freshly-computed risk; persisted separately in approval_store so it
+    # survives pipeline re-runs (e.g. after a disruption simulation).
+    approval_status: Literal["pending", "approved", "rejected"] = "pending"
 
 class ImpactReport(BaseModel):
     disrupted_node: str
@@ -110,4 +114,17 @@ class SimulateResponse(BaseModel):
     report: ImpactReport
     deltas: dict[str, dict[str, int]]
     history_entry: DisruptionHistoryEntry
+    meta: MetaResponse
+
+# --- NEW: audit log models ---
+
+class AgentLogEntry(BaseModel):
+    timestamp: str
+    agent_name: Literal["discovery", "risk_mapper", "prioritizer", "advisor", "system"]
+    action: str
+    detail: str
+    risk_id: Optional[str] = None
+
+class AuditLogResponse(BaseModel):
+    logs: List[AgentLogEntry]
     meta: MetaResponse

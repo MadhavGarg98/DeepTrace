@@ -29,6 +29,10 @@ export const RiskPanel: React.FC = () => {
     return () => window.removeEventListener('disruption-simulated', fetchRisks);
   }, []); // Run on mount and when simulated
 
+  const handleStatusChange = (updated: RiskChain) => {
+    setRisks(prev => prev.map(r => (r.id === updated.id ? updated : r)));
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-[var(--color-border)] bg-gray-50/50">
@@ -44,6 +48,7 @@ export const RiskPanel: React.FC = () => {
               risk={risk} 
               isTopRisk={index === 0} 
               totalRevenue={summary?.total_revenue_at_risk || 5000000000} // Fallback if missing
+              onStatusChange={handleStatusChange}
             />
           ))
         )}
