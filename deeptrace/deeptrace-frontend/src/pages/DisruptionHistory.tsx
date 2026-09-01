@@ -48,8 +48,20 @@ export const DisruptionHistory: React.FC = () => {
                 <div key={idx} className="bg-white border border-[var(--color-border)] rounded-lg p-6 shadow-sm flex flex-col gap-4">
                   <div className="flex justify-between items-start border-b border-[var(--color-border)] pb-4">
                     <div>
-                      <div className="text-xs text-[var(--color-text-secondary)] mb-1">
-                        {new Date(entry.timestamp).toLocaleString()}
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="text-xs text-[var(--color-text-secondary)]">
+                          {new Date(entry.timestamp).toLocaleString()}
+                        </div>
+                        {entry.trigger_source === 'live_sensed' ? (
+                          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-green-100 text-green-800">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            LIVE
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-gray-100 text-gray-500">
+                            DEMO DATA
+                          </span>
+                        )}
                       </div>
                       <h3 className="text-lg font-medium text-[var(--color-text-primary)]">
                         Outage at {entry.disrupted_node}

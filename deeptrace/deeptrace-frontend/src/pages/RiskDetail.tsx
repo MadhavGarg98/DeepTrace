@@ -7,6 +7,7 @@ import { formatPercentage, formatCurrency } from '../utils/format';
 import { ChevronRight, ArrowLeft } from 'lucide-react';
 import { CascadeTimeline } from '../components/risks/CascadeTimeline';
 import { Tooltip } from '../components/common/Tooltip';
+import { AuditTrail } from '../components/risks/AuditTrail';
 
 export const RiskDetail: React.FC = () => {
   const { chainId } = useParams();
@@ -124,6 +125,10 @@ export const RiskDetail: React.FC = () => {
             <div>
               <CascadeTimeline risk={risk} totalRevenue={totalRev} />
             </div>
+          </div>
+          
+          <div className="mb-8">
+            <AuditTrail chainId={risk.id} />
           </div>
         </div>
       </div>

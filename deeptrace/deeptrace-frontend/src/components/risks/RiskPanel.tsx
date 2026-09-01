@@ -4,11 +4,14 @@ import type { RiskChain, AnalyticsSummary } from '../../api/types';
 import { RiskCard } from './RiskCard';
 import { useStore } from '../../state/store';
 import { Tooltip } from '../common/Tooltip';
+import { Radio } from 'lucide-react';
 
 export const RiskPanel: React.FC = () => {
   const [risks, setRisks] = useState<RiskChain[]>([]);
+  const [resolvedRisks, setResolvedRisks] = useState<RiskChain[]>([]);
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
-  const { setActiveRiskId, activeRiskId } = useStore();
+  const [showResolved, setShowResolved] = useState(false);
+  const { setActiveRiskId, activeRiskId, lastSenseMatches } = useStore();
 
   const fetchRisks = () => {
     Promise.all([
@@ -30,7 +33,17 @@ export const RiskPanel: React.FC = () => {
   }, []); // Run on mount and when simulated
 
   const handleStatusChange = (updated: RiskChain) => {
-    setRisks(prev => prev.map(r => (r.id === updated.id ? updated : r)));
+    if (updated.reroute_executed) {
+      setResolvedRisks(prev => {
+        if (!prev.find(r => r.id === updated.id)) {
+          return [...prev, updated];
+        }
+        return prev.map(r => (r.id === updated.id ? updated : r));
+      });
+      setRisks(prev => prev.filter(r => r.id !== updated.id));
+    } else {
+      setRisks(prev => prev.map(r => (r.id === updated.id ? updated : r)));
+    }
   };
 
   return (
@@ -39,6 +52,30 @@ export const RiskPanel: React.FC = () => {
         <h2 className="text-xs font-medium uppercase tracking-panel-header text-[var(--color-text-secondary)]">Detected Risks</h2>
       </div>
       <div className="flex-grow p-4 overflow-y-auto space-y-4">
+        {lastSenseMatches && lastSenseMatches.length > 0 && (
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </span>
+              <h3 className="text-xs font-semibold text-red-700 uppercase tracking-wider">Live Alerts</h3>
+            </div>
+            {lastSenseMatches.map((match, idx) => (
+              <div key={idx} className="bg-red-50 border border-red-100 rounded p-3 text-sm flex gap-3">
+                <Radio size={16} className="text-red-500 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-medium text-red-900 mb-1">{match.article_title}</div>
+                  <div className="text-xs text-red-700 flex gap-2">
+                    <span className="font-semibold bg-red-100 px-1.5 rounded">{match.node_id}</span>
+                    <span className="opacity-75">{match.article_domain}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {risks.length === 0 ? (
           <div className="text-sm text-[var(--color-text-secondary)]">No convergence risks detected.</div>
         ) : (
@@ -60,6 +97,31 @@ export const RiskPanel: React.FC = () => {
                 How risk scoring works
               </span>
             </Tooltip>
+          </div>
+        )}
+
+        {resolvedRisks.length > 0 && (
+          <div className="mt-8 pt-4 border-t border-[var(--color-border)]">
+            <button 
+              className="flex items-center justify-between w-full text-xs font-medium uppercase tracking-panel-header text-[var(--color-text-secondary)] mb-4"
+              onClick={() => setShowResolved(!showResolved)}
+            >
+              Resolved Chains ({resolvedRisks.length})
+              <span className="text-[10px]">{showResolved ? 'Hide' : 'Show'}</span>
+            </button>
+            
+            {showResolved && (
+              <div className="space-y-4">
+                {resolvedRisks.map((risk) => (
+                  <RiskCard 
+                    key={risk.id} 
+                    risk={risk} 
+                    isTopRisk={false} 
+                    totalRevenue={summary?.total_revenue_at_risk || 5000000000} 
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

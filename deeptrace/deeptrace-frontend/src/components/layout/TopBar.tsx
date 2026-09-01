@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { SummaryStrip } from '../analytics/SummaryStrip';
 import { SimulateButton } from '../disruption/SimulateButton';
+import { SenseButton } from '../disruption/SenseButton';
 import { Info } from 'lucide-react';
 import { api } from '../../api/client';
 import type { AnalyticsSummary } from '../../api/types';
@@ -51,6 +52,7 @@ export const TopBar: React.FC = () => {
             </div>
           )}
         </div>
+        <SenseButton />
         <SimulateButton />
       </div>
     </header>

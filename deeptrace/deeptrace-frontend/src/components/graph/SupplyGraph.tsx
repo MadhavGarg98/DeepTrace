@@ -12,7 +12,7 @@ export const SupplyGraph: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [graphData, setGraphData] = useState<GraphDataResponse | null>(null);
-  const [risks, setRisks] = useState<RiskChain[]>([]);
+  const [risks, setRisks] = useState<RiskChain[] | null>(null);
   
   const { 
     setSelectedNodeId, 
@@ -23,10 +23,15 @@ export const SupplyGraph: React.FC = () => {
   const [activeRisk, setActiveRisk] = useState<RiskChain | null>(null);
   const [hoveredEdge, setHoveredEdge] = useState<{ text: string; x: number; y: number } | null>(null);
 
-  useEffect(() => {
-    // Load full graph and risks for sizing
+  const fetchGraphData = () => {
     api.getGraph().then(data => setGraphData(data)).catch(console.error);
     api.getRisks().then(data => setRisks(data.risks)).catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchGraphData();
+    window.addEventListener('disruption-simulated', fetchGraphData);
+    return () => window.removeEventListener('disruption-simulated', fetchGraphData);
   }, []);
 
   useEffect(() => {
@@ -42,7 +47,7 @@ export const SupplyGraph: React.FC = () => {
   }, [activeRiskId]);
 
   useEffect(() => {
-    if (!containerRef.current || !graphData || risks.length === 0) return;
+    if (!containerRef.current || !graphData || risks === null) return;
 
     if (!cyRef.current) {
       const cy = cytoscape({
@@ -143,7 +148,7 @@ export const SupplyGraph: React.FC = () => {
     });
 
     cy.fit(undefined, 40);
-  }, [graphData]);
+  }, [graphData, risks]);
 
   // Handle active risk styling
   useEffect(() => {
@@ -252,6 +257,9 @@ export const SupplyGraph: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-danger)]" style={{ backgroundColor: '#E24B4A' }}></div>
           <span>Disrupted</span>
+        </div>
+        <div className="pt-2 mt-2 border-t border-[var(--color-border)] italic max-w-[200px] leading-snug">
+          Live-sensed data is marked <span className="font-bold text-green-700 not-italic">LIVE</span>; the supplier graph itself is seeded demo data.
         </div>
       </div>
     </div>

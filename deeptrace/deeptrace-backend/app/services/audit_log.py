@@ -13,6 +13,8 @@ def append_log(
     action: str,
     detail: str,
     risk_id: Optional[str] = None,
+    trigger_source: Optional[str] = None,
+    evidence: Optional[List[str]] = None,
 ) -> AgentLogEntry:
     entry = AgentLogEntry(
         timestamp=datetime.datetime.utcnow().isoformat() + "Z",
@@ -20,6 +22,8 @@ def append_log(
         action=action,
         detail=detail,
         risk_id=risk_id,
+        trigger_source=trigger_source,
+        evidence=evidence,
     )
     _LOG.append(entry)
     return entry

@@ -54,6 +54,9 @@ class RiskChain(BaseModel):
     # freshly-computed risk; persisted separately in approval_store so it
     # survives pipeline re-runs (e.g. after a disruption simulation).
     approval_status: Literal["pending", "approved", "rejected"] = "pending"
+    suggested_reroute_node_id: Optional[str] = None
+    suggested_reroute_node_name: Optional[str] = None
+    reroute_executed: bool = False
 
 class ImpactReport(BaseModel):
     disrupted_node: str
@@ -61,12 +64,32 @@ class ImpactReport(BaseModel):
     total_revenue_at_risk: float
     cascade_path: List[List[str]]
 
+class GdeltMatch(BaseModel):
+    node_id: str
+    article_title: Optional[str] = None
+    article_domain: Optional[str] = None
+    article_url: Optional[str] = None
+
+class MetaResponse(BaseModel):
+    mode: str = "demo"
+    data_generated_at: str = "2024-05-15T00:00:00Z"
+    note: str = "Tier 2+ relationships are demo data illustrating the detection pipeline; Tier 1 reflects direct ERP-style input."
+
+class SenseResponse(BaseModel):
+    matches_found: int
+    matches: List[GdeltMatch]
+    meta: MetaResponse
+    source: Literal["live", "cached", "unavailable"] = "live"
+    cached_at: Optional[str] = None
+
+
 class DisruptionHistoryEntry(BaseModel):
     timestamp: str
     disrupted_node: str
     affected_suppliers: List[str]
     revenue_impact: float
     score_deltas: dict[str, dict[str, int]]  # chain_id -> {"before": X, "after": Y}
+    trigger_source: str = "manual"
 
 class ChatRequest(BaseModel):
     message: str
@@ -84,10 +107,6 @@ class AnalyticsSummary(BaseModel):
     highest_risk_score: int
     total_revenue_at_risk: float
 
-class MetaResponse(BaseModel):
-    mode: str = "demo"
-    data_generated_at: str = "2024-05-15T00:00:00Z"
-    note: str = "Tier 2+ relationships are demo data illustrating the detection pipeline; Tier 1 reflects direct ERP-style input."
 
 class GraphDataResponse(BaseModel):
     nodes: List[CompanyNode]
@@ -124,6 +143,8 @@ class AgentLogEntry(BaseModel):
     action: str
     detail: str
     risk_id: Optional[str] = None
+    trigger_source: Optional[str] = None
+    evidence: Optional[List[str]] = None
 
 class AuditLogResponse(BaseModel):
     logs: List[AgentLogEntry]

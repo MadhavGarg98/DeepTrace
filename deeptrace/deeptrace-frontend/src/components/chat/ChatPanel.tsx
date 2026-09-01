@@ -4,6 +4,7 @@ import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { api } from '../../api/client';
 import { Spinner } from '../common/Button';
+import { Bot, Sparkles } from 'lucide-react';
 
 export const ChatPanel: React.FC = () => {
   const { chatHistory, addChatMessage, setActiveRiskId } = useStore();
@@ -78,21 +79,41 @@ export const ChatPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      <div className="p-4 border-b border-[var(--color-border)] bg-gray-50/50 shrink-0">
-        <h2 className="text-xs font-medium uppercase tracking-panel-header text-[var(--color-text-secondary)]">Risk Advisor</h2>
+      {/* Header */}
+      <div className="p-4 border-b border-[var(--color-border)] bg-gradient-to-r from-white to-gray-50/80 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-md bg-[var(--color-tier1-bg)] flex items-center justify-center">
+            <Sparkles size={12} className="text-[var(--color-tier1)]" />
+          </div>
+          <h2 className="text-xs font-medium uppercase tracking-panel-header text-[var(--color-text-secondary)]">
+            Risk Advisor
+          </h2>
+          <span className="ml-auto flex items-center gap-1 text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full border border-green-100">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            Online
+          </span>
+        </div>
       </div>
       
-      <div className="flex-grow p-4 overflow-y-auto" ref={scrollRef}>
+      {/* Messages */}
+      <div className="flex-grow p-4 overflow-y-auto scroll-smooth" ref={scrollRef}>
         {chatHistory.map((msg) => (
           <ChatMessage key={msg.id} message={msg} />
         ))}
+
+        {/* Typing indicator */}
         {isTyping && (
-          <div className="flex gap-3 mb-6">
-            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shrink-0 text-[var(--color-text-secondary)]">
-              <Spinner className="w-4 h-4" />
+          <div className="flex gap-3 mb-5">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-100 to-gray-200 flex items-center justify-center shrink-0 mt-0.5 shadow-sm ring-1 ring-[var(--color-border)]">
+              <Bot size={15} className="text-[var(--color-text-secondary)]" />
             </div>
-            <div className="bg-gray-50 border border-[var(--color-border)] rounded-[var(--radius-card)] p-3 text-sm text-[var(--color-text-secondary)] flex items-center">
-              Analyzing graph...
+            <div className="bg-white border border-[var(--color-border)] rounded-xl p-3.5 shadow-sm flex items-center gap-2.5">
+              <div className="flex gap-1">
+                <span className="w-2 h-2 bg-[var(--color-tier1)] rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-2 h-2 bg-[var(--color-tier1)] rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-[var(--color-tier1)] rounded-full animate-bounce [animation-delay:300ms]" />
+              </div>
+              <span className="text-xs text-[var(--color-text-muted)]">Analyzing graph...</span>
             </div>
           </div>
         )}
