@@ -23,6 +23,14 @@ const AGENT_COLORS: Record<AgentName, string> = {
 export const AuditLog: React.FC = () => {
   const [logs, setLogs] = useState<AgentLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+
+  const toggleRow = (idx: number) => {
+    const newSet = new Set(expandedRows);
+    if (newSet.has(idx)) newSet.delete(idx);
+    else newSet.add(idx);
+    setExpandedRows(newSet);
+  };
 
   const fetchLogs = () => {
     api.getAuditLog()
@@ -85,9 +93,36 @@ export const AuditLog: React.FC = () => {
                       {entry.risk_id && (
                         <span className="text-xs text-[var(--color-text-muted)] font-mono">&middot; {entry.risk_id}</span>
                       )}
+                      {entry.trigger_source === 'live_sensed' && (
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-700 ml-1">
+                          LIVE
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm text-[var(--color-text-primary)] leading-relaxed">{entry.detail}</p>
-                    <p className="text-xs text-[var(--color-text-muted)] mt-1">
+                    
+                    {entry.evidence && entry.evidence.length > 0 && (
+                      <div className="mt-2 mb-1">
+                        <button 
+                           onClick={() => toggleRow(idx)}
+                           className="text-xs text-blue-600 hover:underline focus:outline-none"
+                        >
+                           {expandedRows.has(idx) ? 'Hide Evidence' : 'Show Evidence'}
+                        </button>
+                        {expandedRows.has(idx) && (
+                          <ul className="space-y-2 mt-2 p-3 bg-gray-50 border border-gray-100 rounded">
+                            {entry.evidence.map((ev, i) => (
+                              <li key={i} className="text-xs text-[var(--color-text-secondary)] flex items-start">
+                                <span className="mr-2 text-[var(--color-tier1)] shrink-0">•</span>
+                                <span className="break-all">{ev}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-[var(--color-text-muted)] mt-2">
                       {new Date(entry.timestamp).toLocaleString()}
                     </p>
                   </div>

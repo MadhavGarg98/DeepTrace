@@ -45,6 +45,24 @@ export interface RiskChain {
   explanation?: string;
   recommendation?: string;
   approval_status: ApprovalStatus;
+  suggested_reroute_node_id?: string;
+  suggested_reroute_node_name?: string;
+  reroute_executed?: boolean;
+}
+
+export interface GdeltMatch {
+  node_id: string;
+  article_title?: string;
+  article_domain?: string;
+  article_url?: string;
+}
+
+export interface SenseResponse {
+  matches_found: number;
+  matches: GdeltMatch[];
+  meta: MetaResponse;
+  source: 'live' | 'cached' | 'unavailable';
+  cached_at?: string;
 }
 
 export interface ImpactReport {
@@ -60,6 +78,7 @@ export interface DisruptionHistoryEntry {
   affected_suppliers: string[];
   revenue_impact: number;
   score_deltas: Record<string, { before: number; after: number }>;
+  trigger_source?: string;
 }
 
 export interface ChatRequest {
@@ -134,6 +153,8 @@ export interface AgentLogEntry {
   action: string;
   detail: string;
   risk_id?: string;
+  trigger_source?: string;
+  evidence?: string[];
 }
 
 export interface AuditLogResponse {

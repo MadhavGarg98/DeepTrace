@@ -8,12 +8,23 @@ class LLMResponseSchema(BaseModel):
     explanation: str
     recommendation: str
 
+def suggest_reroute(chain: RiskChain) -> tuple[str | None, str | None]:
+    from app.graph.graph_service import graph_db
+    alternate = graph_db.find_alternate_supplier(chain)
+    if alternate:
+        return alternate.id, alternate.name
+    return None, None
+
 def get_advice_for_risk(risk: RiskChain) -> tuple[str, str]:
     """
     Makes one LLM call to get an explanation and recommendation.
     Retries once with stricter JSON prompt if it fails.
     Returns (explanation, recommendation).
     """
+    alt_id, alt_name = suggest_reroute(risk)
+    risk.suggested_reroute_node_id = alt_id
+    risk.suggested_reroute_node_name = alt_name
+
     system_prompt = (
         "You are an expert supply chain risk advisor. Analyze the provided supply chain convergence risk. "
         "Return EXACTLY a JSON object with two string keys: 'explanation' (2-3 sentences plain language) "

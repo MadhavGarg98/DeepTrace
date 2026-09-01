@@ -18,22 +18,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, disabled }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-[var(--color-border)] bg-white">
-      <div className="relative">
+    <form onSubmit={handleSubmit} className="p-3 border-t border-[var(--color-border)] bg-gray-50/60">
+      <div className="relative flex items-center">
         <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           disabled={disabled}
-          placeholder={disabled ? "Thinking..." : "Ask about a supplier or risk..."}
-          className="w-full bg-gray-50 border border-[var(--color-border)] rounded-[var(--radius-control)] py-2.5 pl-3 pr-10 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--color-border)] disabled:opacity-50"
+          placeholder={disabled ? "Analyzing..." : "Ask about a supplier or risk..."}
+          className="w-full bg-white border border-[var(--color-border)] rounded-lg py-2.5 pl-3.5 pr-11 text-[13px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-tier1)]/20 focus:border-[var(--color-tier1)]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
         />
         <button 
           type="submit" 
           disabled={!value.trim() || disabled}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] hover:text-[var(--color-tier1)] disabled:opacity-50 disabled:hover:text-[var(--color-text-muted)] transition-colors p-1"
+          className="absolute right-1.5 w-7 h-7 rounded-md flex items-center justify-center bg-[var(--color-tier1)] text-white disabled:opacity-30 disabled:bg-gray-300 hover:bg-[var(--color-tier1)]/90 active:scale-95 transition-all duration-150 shadow-sm"
         >
-          <Send size={16} />
+          <Send size={13} />
         </button>
       </div>
     </form>

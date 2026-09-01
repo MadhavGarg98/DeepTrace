@@ -101,5 +101,104 @@ class GraphService:
             "paths": paths
         }
 
+    def find_alternate_supplier(self, chain: 'RiskChain') -> Optional[CompanyNode]:
+        if not chain or not chain.chain_nodes:
+            return None
+            
+        target = chain.chain_nodes[0]
+        chain_node_ids = {n.id for n in chain.chain_nodes}
+        
+        target_data = self.graph.nodes.get(target.id, {})
+        target_industry = target_data.get("industry")
+        target_supplies = target_data.get("supplies_what")
+        
+        candidates = []
+        for _, data in self.graph.nodes(data=True):
+            if data.get("id") in chain_node_ids:
+                continue
+                
+            industry_match = bool(target_industry and data.get("industry") == target_industry)
+            supplies_match = bool(target_supplies and data.get("supplies_what") == target_supplies)
+            
+            if industry_match or supplies_match:
+                # check upstream ancestry
+                upstream = self.bfs_upstream(data["id"])
+                upstream_ids = {ancestor_id for ancestor_id, _, _ in upstream}
+                upstream_ids.add(data["id"])
+                
+                if not upstream_ids.intersection(chain_node_ids):
+                    candidates.append(CompanyNode(**data))
+                    
+        if not candidates:
+            return None
+            
+        # Deterministic sort: highest revenue first
+        candidates.sort(key=lambda x: (x.revenue_usd or 0), reverse=True)
+        return candidates[0]
+
+    def execute_reroute(self, chain_id: str) -> 'RiskChain':
+        from app.services.pipeline import run_pipeline
+        from app.services.audit_log import append_log
+        from app.models.schemas import RiskChain
+        import datetime
+        
+        risks, _ = run_pipeline(force_refresh=False)
+        chain = next((r for r in risks if r.id == chain_id), None)
+        if not chain:
+            raise ValueError("Chain not found")
+            
+        if chain.approval_status != "approved" or chain.reroute_executed:
+            raise ValueError("Chain must be approved and not already executed")
+            
+        alternate = self.find_alternate_supplier(chain)
+        if not alternate:
+            raise ValueError("No alternate supplier found")
+            
+        target_node_id = chain.chain_nodes[0].id
+        
+        for t1_id in chain.affected_tier1_suppliers:
+            # Backend returns edges (from_id -> to_id). t1 is upstream from target. So target -> t1 ?
+            # Wait, Tier 1 supplies Buyer. Tier 2 supplies Tier 1.
+            # chain_nodes[0] is the deepest or shallowest? 
+            # In convergence.py, chain_nodes is sorted by tier ascending. So chain_nodes[0] is the tier 2 node (closest to tier 1).
+            # The edge is chain_nodes[0] -> t1.
+            if self.graph.has_edge(target_node_id, t1_id):
+                self.graph.remove_edge(target_node_id, t1_id)
+            elif self.graph.has_edge(t1_id, target_node_id):
+                # Just in case direction is reversed
+                self.graph.remove_edge(t1_id, target_node_id)
+                
+            self.graph.add_edge(
+                alternate.id, t1_id,
+                from_id=alternate.id, to_id=t1_id,
+                confidence=0.8, source="trade_data", value_usd=None,
+                evidence=f"Rerouted via approved recommendation on {datetime.datetime.utcnow().isoformat()}",
+                data_source="seed_demo"
+            )
+            
+        # Recompute scores
+        risks, _ = run_pipeline(force_refresh=True)
+        updated_chain = next((r for r in risks if r.id == chain_id), None)
+        
+        if updated_chain is None:
+            updated_chain = chain
+            updated_chain.score = 0
+            
+        updated_chain.reroute_executed = True
+        
+        resolved_chains[chain_id] = updated_chain
+        
+        append_log(
+            agent_name="system",
+            action="execute_reroute",
+            detail=f"Executed reroute of {len(chain.affected_tier1_suppliers)} suppliers from {target_node_id} to {alternate.id}. Risk score is now {updated_chain.score}.",
+            risk_id=chain_id
+        )
+        
+        return updated_chain
+
+# Dictionary to store resolved chains
+resolved_chains = {}
+
 # Singleton instance
 graph_db = GraphService()

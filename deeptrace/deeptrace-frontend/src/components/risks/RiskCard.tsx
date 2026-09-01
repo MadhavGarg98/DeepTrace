@@ -21,6 +21,7 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
   const isActive = activeRiskId === risk.id;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState<'execute' | 'reject' | null>(null);
 
   // We need to estimate total revenue at risk for this card. 
   // For the demo, we assume the backend didn't provide this per-risk in the model, 
@@ -29,22 +30,23 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
   // or just use a fixed number if it's missing. Let's assume it's a large chunk.
   const revenueAtRisk = totalRevenue * (risk.score / 100) * 0.8;
 
-  const handleApprove = async (e: React.MouseEvent) => {
+  const handleApproveAndExecute = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsSubmitting(true);
     setError(null);
     try {
-      const updated = await api.approveRisk(risk.id);
+      await api.approveRisk(risk.id);
+      const updated = await api.executeReroute(risk.id);
       onStatusChange?.(updated);
-      // Keep the chat panel in the loop, same UX as before, but now it
-      // fires *after* a real, persisted approval instead of a fake local flag.
+      window.dispatchEvent(new Event('disruption-simulated'));
       window.dispatchEvent(new CustomEvent('send-chat', {
-        detail: `I have approved the recommendation for the bottleneck at ${risk.bottleneck_node_id}. Please draft an action plan to mitigate this risk.`
+        detail: `I have approved and executed the reroute recommendation for the bottleneck at ${risk.bottleneck_node_id}.`
       }));
     } catch (err: any) {
-      setError(err.message || 'Failed to approve');
+      setError(err.message || 'Failed to execute reroute');
     } finally {
       setIsSubmitting(false);
+      setShowConfirm(null);
     }
   };
 
@@ -59,8 +61,10 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
       setError(err.message || 'Failed to reject');
     } finally {
       setIsSubmitting(false);
+      setShowConfirm(null);
     }
   };
+
 
   return (
     <div 
@@ -124,37 +128,77 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
             "{risk.explanation}"
           </p>
 
-          {error && (
-            <p className="text-xs text-[var(--color-danger)] mb-2">{error}</p>
-          )}
+          <div className="mt-4 bg-gray-50 rounded-md p-3 border border-gray-100">
+            <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Suggested Reroute</h4>
+            {!risk.suggested_reroute_node_id ? (
+              <p className="text-sm text-gray-500">No safe alternate supplier found.</p>
+            ) : (
+              <div>
+                <p className="text-sm text-gray-800 mb-3">
+                  Reroute through <span className="font-medium">{risk.suggested_reroute_node_name}</span> instead of {risk.bottleneck_node_id}.
+                </p>
 
-          {risk.approval_status === 'pending' && isTopRisk && (
-            <div className="flex gap-2">
-              <Button
-                variant="primary"
-                isLoading={isSubmitting}
-                className="flex-1 text-xs py-1.5"
-                onClick={handleApprove}
-              >
-                Approve recommendation
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={isSubmitting}
-                className="text-xs py-1.5 px-3"
-                onClick={handleReject}
-              >
-                <X size={14} />
-              </Button>
-            </div>
-          )}
+                {error && (
+                  <p className="text-xs text-[var(--color-danger)] mb-2">{error}</p>
+                )}
 
-          {risk.approval_status === 'approved' && isTopRisk && (
-            <Button variant="secondary" disabled className="w-full text-xs py-1.5">
-              <Check size={14} className="mr-1.5" />
-              Approved &middot; ready to act on
-            </Button>
-          )}
+                {risk.reroute_executed ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center text-sm text-green-700 font-medium">
+                      <Check size={16} className="mr-1.5" />
+                      Rerouted to {risk.suggested_reroute_node_name}
+                    </div>
+                    <Link to={`/risks/${risk.id}`} className="text-xs text-blue-600 hover:underline">View audit trail &rarr;</Link>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {showConfirm ? (
+                      <div className="bg-white border border-[var(--color-border)] p-3 rounded shadow-sm text-sm" onClick={e => e.stopPropagation()}>
+                        <p className="mb-3 text-gray-700 font-medium">Are you sure you want to {showConfirm === 'execute' ? 'approve and execute' : 'reject'} this reroute?</p>
+                        <div className="flex gap-2">
+                          <Button
+                            variant={showConfirm === 'execute' ? 'primary' : 'danger'}
+                            isLoading={isSubmitting}
+                            className="flex-1 text-xs py-1.5"
+                            onClick={showConfirm === 'execute' ? handleApproveAndExecute : handleReject}
+                          >
+                            Confirm {showConfirm === 'execute' ? 'Execute' : 'Reject'}
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            disabled={isSubmitting}
+                            className="text-xs py-1.5 px-3"
+                            onClick={() => setShowConfirm(null)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      risk.approval_status === 'pending' && isTopRisk && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="primary"
+                            className="flex-1 text-xs py-1.5"
+                            onClick={(e) => { e.stopPropagation(); setShowConfirm('execute'); }}
+                          >
+                            Approve & Execute
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            className="text-xs py-1.5 px-3 hover:bg-red-50 hover:text-red-700"
+                            onClick={(e) => { e.stopPropagation(); setShowConfirm('reject'); }}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

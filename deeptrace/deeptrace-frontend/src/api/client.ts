@@ -1,4 +1,4 @@
-import type { AnalyticsSummary, ChatRequest, ChatResponse, GraphDataResponse, RisksResponse, RiskChain, SuppliersResponse, DisruptionHistoryResponse, SimulateResponse, AuditLogResponse } from './types';
+import type { AnalyticsSummary, ChatRequest, ChatResponse, GraphDataResponse, RisksResponse, RiskChain, SuppliersResponse, DisruptionHistoryResponse, SimulateResponse, AuditLogResponse, SenseResponse } from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
@@ -40,4 +40,6 @@ export const api = {
     method: 'POST'
   }),
   getAuditLog: () => fetcher<AuditLogResponse>('/api/v1/audit'),
+  executeReroute: (chainId: string) => fetcher<RiskChain>(`/api/v1/risks/${chainId}/execute-reroute`, { method: 'POST' }),
+  senseDisruptions: () => fetcher<SenseResponse>('/api/v1/disruptions/sense', { method: 'POST' }),
 };

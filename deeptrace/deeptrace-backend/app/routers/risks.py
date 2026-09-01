@@ -11,9 +11,11 @@ async def get_all_risks():
     """
     Returns all detected convergence risks sorted by score descending.
     """
+    from app.graph.graph_service import resolved_chains
     scored_risks, _ = run_pipeline()
+    active_risks = [r for r in scored_risks if r.id not in resolved_chains]
     return RisksResponse(
-        risks=scored_risks,
+        risks=active_risks,
         meta=MetaResponse()
     )
 
@@ -22,6 +24,10 @@ async def get_risk_by_node(chain_id: str):
     """
     Full detail for one risk chain.
     """
+    from app.graph.graph_service import resolved_chains
+    if chain_id in resolved_chains:
+        return resolved_chains[chain_id]
+        
     scored_risks, _ = run_pipeline()
     for risk in scored_risks:
         if risk.id == chain_id:
@@ -79,3 +85,16 @@ async def reject_risk(chain_id: str):
     )
     risk.approval_status = "rejected"
     return risk
+
+@router.post("/{chain_id}/execute-reroute", response_model=RiskChain)
+async def execute_reroute_endpoint(chain_id: str):
+    """
+    Executes an approved reroute server-side.
+    """
+    from app.graph.graph_service import graph_db
+    _find_risk_or_404(chain_id)
+    try:
+        updated_chain = graph_db.execute_reroute(chain_id)
+        return updated_chain
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

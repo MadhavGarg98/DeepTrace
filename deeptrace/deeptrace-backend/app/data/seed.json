@@ -179,6 +179,30 @@
       "status": "normal",
       "data_source": "seed_demo",
       "supplies_what": "raw silicon"
+    },
+    {
+      "id": "amberchip-vn",
+      "name": "AmberChip Vietnam",
+      "country": "Vietnam",
+      "city": "Ho Chi Minh City",
+      "tier": 3,
+      "industry": "Foundry",
+      "revenue_usd": 8000000000,
+      "status": "normal",
+      "data_source": "seed_demo",
+      "supplies_what": "silicon wafers"
+    },
+    {
+      "id": "polyworks-my",
+      "name": "PolyWorks Malaysia",
+      "country": "Malaysia",
+      "city": "Kuala Lumpur",
+      "tier": 2,
+      "industry": "Semiconductors",
+      "revenue_usd": 1500000000,
+      "status": "normal",
+      "data_source": "seed_demo",
+      "supplies_what": "semiconductors"
     }
   ],
   "edges": [
