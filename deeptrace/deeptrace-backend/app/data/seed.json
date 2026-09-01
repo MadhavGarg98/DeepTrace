@@ -2,7 +2,7 @@
   "nodes": [
     {
       "id": "buyer-corp",
-      "name": "Buyer Corp",
+      "name": "buyer Corp",
       "country": "USA",
       "city": "Detroit",
       "tier": 0,
