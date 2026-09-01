@@ -1,6 +1,6 @@
 import datetime
 from app.graph.graph_service import graph_db
-from app.services.gdelt_client import fetch_gdelt_articles
+from app.services.gdelt_client import GdeltUnavailableError, fetch_gdelt_articles
 from app.models.schemas import GdeltMatch
 
 _gdelt_cache = {
@@ -62,7 +62,11 @@ def get_live_sensed_matches() -> tuple[list[GdeltMatch], str, str | None]:
         
         return unique_matches, "live", None
         
-    except Exception as e:
+    except GdeltUnavailableError:
+        if _gdelt_cache["cached_at"] is not None:
+            return _gdelt_cache["matches"], "cached", _gdelt_cache["cached_at"]
+        return [], "unavailable", None
+    except Exception:
         if _gdelt_cache["cached_at"] is not None:
             return _gdelt_cache["matches"], "cached", _gdelt_cache["cached_at"]
         else:
