@@ -38,8 +38,22 @@ export const ChatPanel: React.FC = () => {
         handleSend(customEvent.detail);
       }
     };
+    const handleAdvisorReply = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail === 'string') {
+        addChatMessage({
+          id: Date.now().toString(),
+          sender: 'agent',
+          text: customEvent.detail
+        });
+      }
+    };
     window.addEventListener('send-chat', handleCustomChat);
-    return () => window.removeEventListener('send-chat', handleCustomChat);
+    window.addEventListener('advisor-reply', handleAdvisorReply);
+    return () => {
+      window.removeEventListener('send-chat', handleCustomChat);
+      window.removeEventListener('advisor-reply', handleAdvisorReply);
+    };
   }, []);
 
   const handleSend = async (text: string) => {

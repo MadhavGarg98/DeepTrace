@@ -17,6 +17,15 @@ async def chat_endpoint(request: ChatRequest):
     Responds to user chat with graph-grounded answers using Groq LLM.
     """
     scored_risks, evidence = run_pipeline()
+    
+    # Chat Guard for Approval/Execution
+    msg_lower = request.message.lower()
+    if ("approve" in msg_lower or "execute" in msg_lower or "reroute" in msg_lower) and len(msg_lower.split()) < 20:
+        return ChatResponse(
+            answer="Approvals and reroutes are handled from the Risk Panel — open the risk card to review and approve the suggested reroute directly.",
+            top_risk=scored_risks[0] if scored_risks else None,
+            evidence=evidence
+        )
 
     context = "Here are the top detected risks in the supply chain:\n"
     for idx, risk in enumerate(scored_risks):

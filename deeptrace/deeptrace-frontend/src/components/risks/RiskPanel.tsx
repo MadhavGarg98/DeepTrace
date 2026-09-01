@@ -62,12 +62,16 @@ export const RiskPanel: React.FC = () => {
               <h3 className="text-xs font-semibold text-red-700 uppercase tracking-wider">Live Alerts</h3>
             </div>
             {lastSenseMatches.map((match, idx) => (
-              <div key={idx} className="bg-red-50 border border-red-100 rounded p-3 text-sm flex gap-3">
+              <div key={idx} className="border rounded p-3 text-sm flex gap-3 bg-red-50 border-red-100">
                 <Radio size={16} className="text-red-500 shrink-0 mt-0.5" />
-                <div>
-                  <div className="font-medium text-red-900 mb-1">{match.article_title}</div>
-                  <div className="text-xs text-red-700 flex gap-2">
-                    <span className="font-semibold bg-red-100 px-1.5 rounded">{match.node_id}</span>
+                <div className="flex-1">
+                  <div className="font-medium mb-1 text-red-900">
+                    <a href={match.article_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      {match.article_title}
+                    </a>
+                  </div>
+                  <div className="text-xs flex gap-2 text-red-700">
+                    <span className="font-semibold px-1.5 rounded bg-red-100">{match.node_id}</span>
                     <span className="opacity-75">{match.article_domain}</span>
                   </div>
                 </div>

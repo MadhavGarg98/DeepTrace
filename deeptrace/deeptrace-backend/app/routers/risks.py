@@ -64,6 +64,12 @@ async def approve_risk(chain_id: str):
         risk_id=chain_id,
     )
     risk.approval_status = "approved"
+    
+    from app.agents.advisor_agent import assess_reroute_impact
+    reasoning, next_steps = assess_reroute_impact(risk)
+    risk.approval_reasoning = reasoning
+    risk.approval_next_steps = next_steps
+    
     return risk
 
 

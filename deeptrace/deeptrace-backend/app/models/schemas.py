@@ -54,6 +54,8 @@ class RiskChain(BaseModel):
     # freshly-computed risk; persisted separately in approval_store so it
     # survives pipeline re-runs (e.g. after a disruption simulation).
     approval_status: Literal["pending", "approved", "rejected"] = "pending"
+    approval_reasoning: Optional[str] = None
+    approval_next_steps: Optional[List[str]] = None
     suggested_reroute_node_id: Optional[str] = None
     suggested_reroute_node_name: Optional[str] = None
     reroute_executed: bool = False
@@ -69,6 +71,12 @@ class GdeltMatch(BaseModel):
     article_title: Optional[str] = None
     article_domain: Optional[str] = None
     article_url: Optional[str] = None
+    verified: bool = False
+
+class RelevanceVerdict(BaseModel):
+    candidate_index: int
+    relevant: bool
+    reason: str
 
 class MetaResponse(BaseModel):
     mode: str = "demo"
@@ -76,11 +84,12 @@ class MetaResponse(BaseModel):
     note: str = "Tier 2+ relationships are demo data illustrating the detection pipeline; Tier 1 reflects direct ERP-style input."
 
 class SenseResponse(BaseModel):
+    status: Literal["ok", "cached", "unavailable"]
+    provider_used: Optional[str] = None
+    fetched_at: str
     matches_found: int
     matches: List[GdeltMatch]
     meta: MetaResponse
-    source: Literal["live", "cached", "unavailable"] = "live"
-    cached_at: Optional[str] = None
 
 
 class DisruptionHistoryEntry(BaseModel):
@@ -145,6 +154,7 @@ class AgentLogEntry(BaseModel):
     risk_id: Optional[str] = None
     trigger_source: Optional[str] = None
     evidence: Optional[List[str]] = None
+    provider_used: Optional[str] = None
 
 class AuditLogResponse(BaseModel):
     logs: List[AgentLogEntry]

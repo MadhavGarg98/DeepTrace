@@ -30,17 +30,42 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
   // or just use a fixed number if it's missing. Let's assume it's a large chunk.
   const revenueAtRisk = totalRevenue * (risk.score / 100) * 0.8;
 
-  const handleApproveAndExecute = async (e: React.MouseEvent) => {
+  const handleApprove = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsSubmitting(true);
     setError(null);
     try {
-      await api.approveRisk(risk.id);
+      const updated = await api.approveRisk(risk.id);
+      onStatusChange?.(updated);
+      
+      const reasoning = updated.approval_reasoning || `Rerouting to ${updated.suggested_reroute_node_name} is recommended.`;
+      const nextSteps = updated.approval_next_steps?.length 
+          ? updated.approval_next_steps.map((s: string) => `- ${s}`).join('\n')
+          : `- Confirm capacity with the new supplier before executing.`;
+          
+      const chatMsg = `**Impact Assessment:**\n${reasoning}\n\n**Next Steps:**\n${nextSteps}`;
+      
+      window.dispatchEvent(new CustomEvent('advisor-reply', {
+        detail: chatMsg
+      }));
+    } catch (err: any) {
+      setError(err.message || 'Failed to approve');
+    } finally {
+      setIsSubmitting(false);
+      setShowConfirm(null);
+    }
+  };
+
+  const handleExecute = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSubmitting(true);
+    setError(null);
+    try {
       const updated = await api.executeReroute(risk.id);
       onStatusChange?.(updated);
       window.dispatchEvent(new Event('disruption-simulated'));
       window.dispatchEvent(new CustomEvent('send-chat', {
-        detail: `I have approved and executed the reroute recommendation for the bottleneck at ${risk.bottleneck_node_id}.`
+        detail: `I have executed the reroute for the bottleneck at ${risk.bottleneck_node_id}.`
       }));
     } catch (err: any) {
       setError(err.message || 'Failed to execute reroute');
@@ -143,7 +168,7 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
                 )}
 
                 {risk.reroute_executed ? (
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 mt-4">
                     <div className="flex items-center text-sm text-green-700 font-medium">
                       <Check size={16} className="mr-1.5" />
                       Rerouted to {risk.suggested_reroute_node_name}
@@ -151,18 +176,32 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
                     <Link to={`/risks/${risk.id}`} className="text-xs text-blue-600 hover:underline">View audit trail &rarr;</Link>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 mt-4">
+                    {risk.approval_status === 'approved' && (
+                      <div className="mb-3 bg-white p-3 rounded border border-[var(--color-border)] shadow-sm">
+                        <div className="flex items-center text-sm text-green-700 font-medium mb-1">
+                          <Check size={16} className="mr-1.5" />
+                          Reroute approved — ready to execute
+                        </div>
+                        <div className="text-xs text-gray-600 pl-5">
+                          Target: <span className="font-semibold text-gray-800">{risk.suggested_reroute_node_name}</span>
+                        </div>
+                      </div>
+                    )}
+                    
                     {showConfirm ? (
                       <div className="bg-white border border-[var(--color-border)] p-3 rounded shadow-sm text-sm" onClick={e => e.stopPropagation()}>
-                        <p className="mb-3 text-gray-700 font-medium">Are you sure you want to {showConfirm === 'execute' ? 'approve and execute' : 'reject'} this reroute?</p>
+                        <p className="mb-3 text-gray-700 font-medium">
+                          Are you sure you want to {showConfirm === 'execute' ? 'execute' : (showConfirm === 'approve' ? 'approve' : 'reject')} this reroute?
+                        </p>
                         <div className="flex gap-2">
                           <Button
-                            variant={showConfirm === 'execute' ? 'primary' : 'danger'}
+                            variant={showConfirm === 'execute' ? 'primary' : (showConfirm === 'approve' ? 'primary' : 'danger')}
                             isLoading={isSubmitting}
                             className="flex-1 text-xs py-1.5"
-                            onClick={showConfirm === 'execute' ? handleApproveAndExecute : handleReject}
+                            onClick={showConfirm === 'execute' ? handleExecute : (showConfirm === 'approve' ? handleApprove : handleReject)}
                           >
-                            Confirm {showConfirm === 'execute' ? 'Execute' : 'Reject'}
+                            Confirm {showConfirm === 'execute' ? 'Execute' : (showConfirm === 'approve' ? 'Approve' : 'Reject')}
                           </Button>
                           <Button
                             variant="secondary"
@@ -175,14 +214,14 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
                         </div>
                       </div>
                     ) : (
-                      risk.approval_status === 'pending' && isTopRisk && (
+                      risk.approval_status === 'pending' && isTopRisk ? (
                         <div className="flex gap-2">
                           <Button
                             variant="primary"
                             className="flex-1 text-xs py-1.5"
-                            onClick={(e) => { e.stopPropagation(); setShowConfirm('execute'); }}
+                            onClick={(e) => { e.stopPropagation(); setShowConfirm('approve'); }}
                           >
-                            Approve & Execute
+                            Approve
                           </Button>
                           <Button
                             variant="secondary"
@@ -192,6 +231,18 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
                             Reject
                           </Button>
                         </div>
+                      ) : (
+                        risk.approval_status === 'approved' && isTopRisk && (
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              variant="primary"
+                              className="w-full text-xs py-2 uppercase tracking-wider font-bold"
+                              onClick={(e) => { e.stopPropagation(); setShowConfirm('execute'); }}
+                            >
+                              Execute Reroute
+                            </Button>
+                          </div>
+                        )
                       )
                     )}
                   </div>

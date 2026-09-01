@@ -16,7 +16,7 @@ export const TopBar: React.FC = () => {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-[var(--color-border)] px-6 flex items-center justify-between shrink-0 z-30 relative">
+    <header className="h-16 bg-white border-b border-[var(--color-border)] px-6 flex flex-nowrap items-center justify-between shrink-0 z-30 relative">
       <div className="flex items-center gap-8 h-full">
         <div className="font-semibold text-[var(--color-text-primary)] text-lg tracking-tight">
           DeepTrace<span className="text-[var(--color-risk)]">.</span>
@@ -31,7 +31,7 @@ export const TopBar: React.FC = () => {
 
         <SummaryStrip />
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-nowrap items-center gap-4 shrink-0 min-w-0">
         <div className="relative">
           <button 
             className="flex items-center gap-1.5 text-xs text-[var(--color-text-secondary)] bg-gray-50 border border-[var(--color-border)] px-2 py-1 rounded-[var(--radius-control)] hover:bg-gray-100"

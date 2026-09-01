@@ -55,14 +55,16 @@ export interface GdeltMatch {
   article_title?: string;
   article_domain?: string;
   article_url?: string;
+  verified?: boolean;
 }
 
 export interface SenseResponse {
+  status: 'ok' | 'cached' | 'unavailable';
+  provider_used?: string;
+  fetched_at: string;
   matches_found: number;
   matches: GdeltMatch[];
   meta: MetaResponse;
-  source: 'live' | 'cached' | 'unavailable';
-  cached_at?: string;
 }
 
 export interface ImpactReport {
@@ -155,6 +157,7 @@ export interface AgentLogEntry {
   risk_id?: string;
   trigger_source?: string;
   evidence?: string[];
+  provider_used?: string;
 }
 
 export interface AuditLogResponse {

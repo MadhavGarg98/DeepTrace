@@ -17,28 +17,34 @@ export const SenseButton: React.FC = () => {
     
     try {
       const response = await api.senseDisruptions();
-      if (response.source === 'unavailable') {
-        setError("Live check unavailable right now");
+      if (response.status === 'unavailable') {
+        setError("Couldn't reach any live data source right now — try again shortly.");
         setLastSenseMatches(null);
         return;
       }
       
       setLastSenseMatches(response.matches);
 
-      if (response.matches_found === 0) {
-        setStatusMsg("No new disruption events found in the last check");
-      } else {
+      if (response.status === 'cached') {
         setStatusMsg(
-          response.source === 'cached'
-            ? `Showing results from last successful check at ${new Date(response.cached_at!).toLocaleTimeString()}`
-            : `Sensed ${response.matches_found} live events`
+          <span className="flex items-start gap-1.5 text-amber-700">
+            <AlertCircle size={14} className="shrink-0 mt-0.5" />
+            <span>Showing last known check from {new Date(response.fetched_at).toLocaleTimeString()} — live sources are unreachable right now.</span>
+          </span>
         );
-        window.dispatchEvent(new Event('disruption-simulated'));
+      } else {
+        // status === 'ok'
+        if (response.matches_found === 0) {
+          setStatusMsg("No live disruptions currently affecting your supply chain.");
+        } else {
+          setStatusMsg(`Sensed ${response.matches_found} live events ${response.provider_used ? `via ${response.provider_used}` : ''}`);
+          window.dispatchEvent(new Event('disruption-simulated'));
+        }
       }
       
-      setTimeout(() => setStatusMsg(null), 6000);
+      setTimeout(() => setStatusMsg(null), 8000);
     } catch (err: any) {
-      setError("Live check unavailable right now");
+      setError("Couldn't reach any live data source right now — try again shortly.");
       setTimeout(() => setError(null), 4000);
     } finally {
       setIsSensing(false);
@@ -46,16 +52,22 @@ export const SenseButton: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center relative">
       {error && (
-        <span className="flex items-center gap-1.5 text-xs text-[var(--color-danger)] font-medium bg-red-50 px-2.5 py-1.5 rounded border border-red-100">
-          <AlertCircle size={12} />
-          {error}
+        <span 
+          title={error}
+          className="absolute top-full mt-3 right-0 flex items-center gap-1.5 text-xs text-[var(--color-danger)] font-medium bg-red-50 px-3 py-2 rounded border border-red-100 max-w-[300px] shadow-sm z-50"
+        >
+          <AlertCircle size={14} className="shrink-0" />
+          <span>{error}</span>
         </span>
       )}
       {statusMsg && (
-        <span className="text-xs text-gray-600 font-medium bg-gray-100 px-2.5 py-1.5 rounded border border-gray-200">
-          {statusMsg}
+        <span 
+          title={typeof statusMsg === 'string' ? statusMsg : undefined}
+          className="absolute top-full mt-3 right-0 flex items-center text-xs text-gray-700 font-medium bg-gray-50 px-3 py-2 rounded border border-gray-200 max-w-[300px] shadow-sm z-50 whitespace-normal"
+        >
+          <span>{statusMsg}</span>
         </span>
       )}
       <Button 
@@ -69,7 +81,7 @@ export const SenseButton: React.FC = () => {
         ) : (
           <Activity size={14} className="mr-1.5 text-[var(--color-risk)]" />
         )}
-        {isSensing ? 'Checking live news...' : 'Sense'}
+        {isSensing ? 'Checking live news...' : 'Scan Live News'}
       </Button>
     </div>
   );

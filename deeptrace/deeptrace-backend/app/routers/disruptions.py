@@ -64,32 +64,18 @@ async def sense_disruptions_endpoint():
     """
     Checks GDELT for live disruptions matching suppliers and simulates impact.
     """
-    from app.services.disruption_sensing import get_live_sensed_matches
+    from app.services.news_sensing_service import sense_disruptions
     from app.services.audit_log import append_log
     
-    matches, source, cached_at = get_live_sensed_matches()
+    response = await sense_disruptions()
     
-    if source == "unavailable":
-        return SenseResponse(
-            matches_found=0,
-            matches=[],
-            meta=MetaResponse(),
-            source="unavailable"
-        )
-        
-    if not matches:
-        return SenseResponse(
-            matches_found=0,
-            matches=[],
-            meta=MetaResponse(),
-            source=source,
-            cached_at=cached_at
-        )
+    if response.status == "unavailable" or not response.matches:
+        return response
         
     risks_before, _ = run_pipeline()
     score_before = {r.id: r.score for r in risks_before}
     
-    for match in matches:
+    for match in response.matches:
         try:
             report = simulate_disruption(match.node_id)
             risks_after, _ = run_pipeline(force_refresh=True)
@@ -118,7 +104,8 @@ async def sense_disruptions_endpoint():
                 detail=f"GDELT sensing found live event matching node {match.node_id}: {match.article_title}",
                 risk_id=None,
                 trigger_source="live_sensed",
-                evidence=[match.article_title, match.article_url] if match.article_title else []
+                evidence=[match.article_title, match.article_url] if match.article_title else [],
+                provider_used=response.provider_used
             )
             
             score_before = score_after
@@ -126,11 +113,5 @@ async def sense_disruptions_endpoint():
         except ValueError:
             pass
             
-    return SenseResponse(
-        matches_found=len(matches),
-        matches=matches,
-        meta=MetaResponse(),
-        source=source,
-        cached_at=cached_at
-    )
+    return response
 
