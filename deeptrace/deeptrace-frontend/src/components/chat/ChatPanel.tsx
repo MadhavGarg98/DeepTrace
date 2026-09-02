@@ -3,7 +3,7 @@ import { useStore } from '../../state/store';
 import { ChatMessage } from './ChatMessage';
 import { ChatInput } from './ChatInput';
 import { api } from '../../api/client';
-import { Spinner } from '../common/Button';
+
 import { Bot, Sparkles } from 'lucide-react';
 
 export const ChatPanel: React.FC = () => {

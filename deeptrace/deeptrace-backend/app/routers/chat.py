@@ -27,7 +27,53 @@ async def chat_endpoint(request: ChatRequest):
             evidence=evidence
         )
 
-    context = "Here are the top detected risks in the supply chain:\n"
+    # Search for node in graph
+    matched_node = None
+    for n in graph_db.get_all_nodes():
+        if n.name.lower() in msg_lower or n.id.lower() in msg_lower:
+            matched_node = n
+            break
+
+    context = ""
+    fallback_answer = ""
+    if matched_node:
+        in_edges = [e for e in graph_db.get_all_edges() if e.to_id == matched_node.id]
+        out_edges = [e for e in graph_db.get_all_edges() if e.from_id == matched_node.id]
+        
+        node_role = "It isn't currently part of any detected risk chain."
+        for r in scored_risks:
+            if r.bottleneck_node_id == matched_node.id:
+                node_role = f"It is the critical bottleneck in risk chain {r.id}."
+                break
+            elif matched_node.id in r.affected_tier1_suppliers:
+                node_role = f"It is a Tier 1 supplier affected by risk chain {r.id}."
+                break
+            elif any(cn.id == matched_node.id for cn in r.chain_nodes):
+                node_role = f"It is an intermediate node in risk chain {r.id}."
+                break
+                
+        reroute_info = ""
+        for r in scored_risks:
+            alt = graph_db.find_alternate_supplier(r)
+            if alt and alt.id == matched_node.id:
+                reroute_info = f"\n- Reroute Status: It is currently flagged as a viable alternate supplier for risk chain {r.id}."
+                break
+                
+        in_details = [f"receives from {e.from_id}" for e in in_edges]
+        out_details = [f"supplies {e.to_id}" for e in out_edges]
+        
+        context += (
+            f"The user is asking about a specific supplier in the graph: {matched_node.name} (Node ID: {matched_node.id}).\n"
+            f"- Details: Tier {matched_node.tier} {matched_node.industry} supplier in {matched_node.city}, {matched_node.country}.\n"
+            f"- Revenue: ${matched_node.revenue_usd or 0:,.0f}\n"
+            f"- Supplies: {matched_node.supplies_what or 'N/A'}\n"
+            f"- Incoming Dependencies: {', '.join(in_details) if in_details else 'None'}\n"
+            f"- Outgoing Dependencies: {', '.join(out_details) if out_details else 'None'}\n"
+            f"- Risk Status: {node_role}{reroute_info}\n\n"
+        )
+        fallback_answer = f"{matched_node.name} is a Tier {matched_node.tier} {matched_node.industry} supplier in {matched_node.city}, {matched_node.country}. {node_role}{' ' + reroute_info.strip('- \n') if reroute_info else ''}"
+
+    context += "Here are the top detected risks in the supply chain:\n"
     for idx, risk in enumerate(scored_risks):
         bottleneck_node = graph_db.get_node(risk.bottleneck_node_id)
         b_name = bottleneck_node.name if bottleneck_node else risk.bottleneck_node_id
@@ -54,10 +100,10 @@ async def chat_endpoint(request: ChatRequest):
         
     system_prompt = (
         "You are Risk Advisor, an AI assistant analyzing a company's supply chain graph. "
-        "Use the provided context about the current supply chain risks to answer the user's questions. "
+        "Use the provided context about the specific supplier (if requested) and the current supply chain risks to answer the user's questions. "
         "Keep your answers concise, professional, and data-driven. "
-        "If the user asks about a specific supplier, check if they are mentioned in the risks context. "
-        "If the user is just making small talk (like saying 'hi' or 'hello'), reply naturally as an AI supply chain assistant, introducing yourself."
+        "If the user asks about a specific supplier name that is genuinely NOT present in any of the provided context, you must explicitly say 'I don't have a node by that name'. "
+        "If the user is just making small talk (like saying 'hi'), reply naturally as an AI supply chain assistant."
     )
 
     messages = [
@@ -74,7 +120,7 @@ async def chat_endpoint(request: ChatRequest):
         )
         answer = completion.choices[0].message.content
     except Exception as e:
-        answer = f"Error communicating with AI model: {str(e)}"
+        answer = fallback_answer if fallback_answer else f"Error communicating with AI model: {str(e)}"
 
     relevant_risk = scored_risks[0] if scored_risks else None
     

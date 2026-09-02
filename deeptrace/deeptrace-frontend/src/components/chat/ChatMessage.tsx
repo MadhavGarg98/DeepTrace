@@ -2,7 +2,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '../common/ConfidenceBadge';
-import { Bot, User, CheckCircle, AlertTriangle, Info } from 'lucide-react';
+import { Bot, User } from 'lucide-react';
 import type { Components } from 'react-markdown';
 
 export interface MessageProps {
@@ -122,7 +122,7 @@ const markdownComponents: Components = {
   },
 
   /* ── Pre blocks (wrapper) ── */
-  pre: ({ children, ...props }) => (
+  pre: ({ children }) => (
     <>{children}</>
   ),
 

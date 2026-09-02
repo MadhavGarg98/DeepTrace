@@ -3,7 +3,7 @@ import type { RiskChain } from '../../api/types';
 import { useStore } from '../../state/store';
 import { RevenueChart } from '../analytics/RevenueChart';
 import { Button } from '../common/Button';
-import { Check, ChevronRight, X } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import { formatPercentage } from '../../utils/format';
 import { Link } from 'react-router-dom';
 import { Tooltip } from '../common/Tooltip';
@@ -21,7 +21,7 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
   const isActive = activeRiskId === risk.id;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState<'execute' | 'reject' | null>(null);
+  const [showConfirm, setShowConfirm] = useState<'approve' | 'execute' | 'reject' | null>(null);
 
   // We need to estimate total revenue at risk for this card. 
   // For the demo, we assume the backend didn't provide this per-risk in the model, 
@@ -196,7 +196,7 @@ export const RiskCard: React.FC<RiskCardProps> = ({ risk, isTopRisk, totalRevenu
                         </p>
                         <div className="flex gap-2">
                           <Button
-                            variant={showConfirm === 'execute' ? 'primary' : (showConfirm === 'approve' ? 'primary' : 'danger')}
+                            variant={showConfirm === 'execute' ? 'primary' : (showConfirm === 'approve' ? 'primary' : 'secondary')}
                             isLoading={isSubmitting}
                             className="flex-1 text-xs py-1.5"
                             onClick={showConfirm === 'execute' ? handleExecute : (showConfirm === 'approve' ? handleApprove : handleReject)}

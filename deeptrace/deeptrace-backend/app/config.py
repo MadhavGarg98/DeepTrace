@@ -13,6 +13,12 @@ class Settings(BaseSettings):
     news_sense_total_budget_seconds: int = 20
     monitor_poll_interval_seconds: int = 20
     demo_time_scale: str = "1m=6h"
+    
+    hana_host: Optional[str] = None
+    hana_port: Optional[str] = None
+    hana_user: Optional[str] = None
+    hana_password: Optional[str] = None
+    hana_schema: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

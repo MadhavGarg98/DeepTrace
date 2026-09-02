@@ -122,7 +122,7 @@ export const AuditLog: React.FC = () => {
                 No log entries yet. Load the dashboard to trigger the agent pipeline.
               </div>
             ) : (
-              Object.keys(groupedLogs).map((chainGroup, cIdx) => (
+              Object.keys(groupedLogs).map((chainGroup) => (
                 <div key={chainGroup} className="bg-white rounded-lg border border-[var(--color-border)] overflow-hidden shadow-sm">
                   <div className="bg-gray-50/80 px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between cursor-pointer hover:bg-gray-100/80 transition-colors">
                     <h2 className="font-semibold text-gray-800 text-sm tracking-wide">

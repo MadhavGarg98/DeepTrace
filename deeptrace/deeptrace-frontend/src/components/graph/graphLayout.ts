@@ -15,25 +15,46 @@ export function calculateTierLayout(nodes: CompanyNode[], width: number = 800) {
   });
 
   const positions: Record<string, { x: number; y: number }> = {};
-  const ySpacing = 140; // vertical distance between tiers
+  
+  const maxNodesPerRow = 7;
+  const ySpacingTier = 140; // distance between different tiers
+  const ySpacingSubRow = 80; // distance between wrapped sub-rows within a tier
   const startY = 50;
+  
+  let currentY = startY;
 
   // Render from tier 0 to max tier top-to-bottom
   const maxTier = Math.max(...Object.keys(tiers).map(Number));
 
   for (let tier = 0; tier <= maxTier; tier++) {
     const tierNodes = tiers[tier] || [];
-    const count = tierNodes.length;
     
-    // Distribute evenly across width
-    const xSpacing = width / (count + 1);
+    // Split tier into multiple sub-rows if it exceeds maxNodesPerRow
+    const rows: CompanyNode[][] = [];
+    for (let i = 0; i < tierNodes.length; i += maxNodesPerRow) {
+      rows.push(tierNodes.slice(i, i + maxNodesPerRow));
+    }
     
-    tierNodes.forEach((node, i) => {
-      positions[node.id] = {
-        x: xSpacing * (i + 1),
-        y: startY + tier * ySpacing
-      };
+    rows.forEach((row, rowIndex) => {
+      const count = row.length;
+      // Distribute evenly across width
+      const xSpacing = width / (count + 1);
+      
+      row.forEach((node, i) => {
+        positions[node.id] = {
+          x: xSpacing * (i + 1),
+          y: currentY
+        };
+      });
+      
+      // Advance Y if there are more sub-rows in this tier
+      if (rowIndex < rows.length - 1) {
+        currentY += ySpacingSubRow;
+      }
     });
+    
+    // Advance Y to the next tier's starting position
+    currentY += ySpacingTier;
   }
 
   return positions;

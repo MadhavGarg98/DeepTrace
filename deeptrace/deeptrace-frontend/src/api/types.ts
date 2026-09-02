@@ -45,6 +45,8 @@ export interface RiskChain {
   explanation?: string;
   recommendation?: string;
   approval_status: ApprovalStatus;
+  approval_reasoning?: string;
+  approval_next_steps?: string[];
   suggested_reroute_node_id?: string;
   suggested_reroute_node_name?: string;
   reroute_executed?: boolean;
